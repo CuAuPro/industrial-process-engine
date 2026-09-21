@@ -486,11 +486,30 @@ python manage.py build
 ```
 
 `manage.py build` runs tests, builds the wheel and source distribution, and checks
-both artifacts. To upload after configuring Twine credentials:
+both artifacts. For a first PyPI upload, create an account-wide API token in your
+[PyPI account settings](https://pypi.org/manage/account/#api-tokens). Run the
+following in an interactive PowerShell 7 terminal from this repository. The token
+input is masked; the script checks it before Twine starts and removes it from
+the terminal environment afterward:
+
+```powershell
+$env:TWINE_USERNAME = '__token__'
+$env:TWINE_PASSWORD = Read-Host 'PyPI API token' -MaskInput
+try {
+    if (-not $env:TWINE_PASSWORD.StartsWith('pypi-')) { throw 'No PyPI token entered' }
+    python manage.py publish
+} finally {
+    Remove-Item Env:TWINE_USERNAME, Env:TWINE_PASSWORD -ErrorAction SilentlyContinue
+}
+```
+
+`publish` rebuilds and checks before uploading. A noninteractive command runner
+cannot answer Twine's token prompt, so use the PowerShell steps above rather
+than relying on Twine to ask. TestPyPI uses a separate account and token; enter
+that token and replace the publish command with:
 
 ```bash
 python manage.py publish --repository testpypi
-python manage.py publish
 ```
 
 Use `python manage.py patch`, `minor`, or `major` to bump the version before a new
