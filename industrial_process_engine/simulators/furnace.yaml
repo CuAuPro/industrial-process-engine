@@ -1,0 +1,121 @@
+# Quick start:
+#   python -m industrial_process_engine.simulators.run_engine furnace
+#   python -m industrial_process_engine.simulators.furnace --mode batch --batch-size 3
+# Explicit product enter/exit topics create a multiple-membership cycle.
+service:
+  name: furnace_demo
+  title: Furnace Demo
+  description: Batch and pusher furnace temperature aggregation demo
+  version: 0.1.0
+process:
+  id: FURNACE_DEMO
+  model: cycle
+  membership: multiple
+  close_run: last_product_exit
+mqtt:
+  enabled: true
+  payload_format: flat
+  host: localhost
+  port: 1883
+  client_id: furnace-engine
+  qos: 1
+opcua:
+  enabled: false
+questdb:
+  enabled: false
+mappings:
+  - source: mqtt
+    topic: demo/furnace/process
+    id: FurnaceMode
+    name: furnace_mode
+    type: string
+    outputs: {product_data: [{name: furnace_mode, calculation: last, output_type: symbol}]}
+  - source: mqtt
+    topic: demo/furnace/process
+    id: FurnaceTemperatureC
+    name: furnace_temperature_c
+    type: float
+    outputs:
+      product_data: [{name: furnace_temperature_c, calculation: weighted_mean, output_type: double}]
+      process_data_time:
+        - {name: furnace_temperature_avg_c, calculation: weighted_mean, output_type: double}
+        - {name: furnace_temperature_max_c, calculation: max, output_type: double}
+  - source: mqtt
+    topic: demo/furnace/process
+    id: TemperatureSetpointC
+    name: temperature_setpoint_c
+    type: float
+    outputs: {product_data: [{name: temperature_setpoint_c, calculation: weighted_mean, output_type: double}]}
+  - source: mqtt
+    topic: demo/furnace/process
+    id: BurnerPowerPct
+    name: burner_power_pct
+    type: float
+    outputs: {product_data: [{name: burner_power_pct, calculation: weighted_mean, output_type: double}]}
+  - source: mqtt
+    topic: demo/furnace/process
+    id: NaturalGasMeterM3
+    name: natural_gas_meter_m3
+    type: float
+  - source: mqtt
+    topic: demo/furnace/process
+    id: NaturalGasFlowM3H
+    name: natural_gas_flow_m3_h
+    type: float
+    outputs: {product_data: [{name: natural_gas_flow_m3_h, calculation: weighted_mean, output_type: double}]}
+  - source: mqtt
+    topic: demo/furnace/process
+    id: PieceTemperatureAvgC
+    name: piece_temperature_avg_c
+    type: float
+    outputs: {product_data: [{name: piece_temperature_avg_c, calculation: weighted_mean, output_type: double}]}
+  - source: mqtt
+    topic: demo/furnace/process
+    id: PieceTemperatureMinC
+    name: piece_temperature_min_c
+    type: float
+    outputs: {product_data: [{name: piece_temperature_min_c, calculation: min, output_type: double}]}
+  - source: mqtt
+    topic: demo/furnace/process
+    id: PieceTemperatureMaxC
+    name: piece_temperature_max_c
+    type: float
+    outputs: {product_data: [{name: piece_temperature_max_c, calculation: max, output_type: double}]}
+  - source: mqtt
+    topic: demo/furnace/process
+    id: ActivePieceCount
+    name: active_piece_count
+    type: int
+    outputs: {product_data: [{name: active_piece_count, calculation: last, output_type: int}]}
+  - source: mqtt
+    topic: demo/furnace/process
+    id: PushNumber
+    name: push_number
+    type: int
+    outputs: {product_data: [{name: push_number, calculation: last, output_type: int}]}
+  - source: mqtt
+    topic: demo/furnace/process
+    id: Soaking
+    name: soaking
+    type: bool
+  - source: mqtt
+    topic: demo/furnace/process
+    id: MaximumResidenceS
+    name: maximum_residence_s
+    type: float
+    outputs: {product_data: [{name: maximum_residence_s, calculation: last, output_type: double}]}
+lifecycle:
+  source: explicit
+  product_topics:
+    enter_topic: demo/furnace/product/enter
+    exit_topic: demo/furnace/product/exit
+    id: ProductId
+streams:
+  product_data:
+    axis: time
+    interval_s: 2.0
+    stale_after_ms: 2000
+  process_data_time:
+    enabled: true
+    interval_s: 5.0
+    stale_after_ms: 2000

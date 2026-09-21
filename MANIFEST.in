@@ -1,0 +1,9 @@
+include README.md
+include README_ADVANCED.md
+include manage.py
+recursive-include industrial_process_engine/simulators *.yaml
+recursive-include industrial_process_engine/templates/basic *
+include industrial_process_engine/templates/basic/.gitignore
+include industrial_process_engine/templates/basic/.dockerignore
+include industrial_process_engine/templates/basic/.env.example
+recursive-include industrial_process_engine/tests *.py

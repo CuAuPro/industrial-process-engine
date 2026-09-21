@@ -1,0 +1,57 @@
+service:
+  name: __SERVICE_NAME__
+  title: __SERVICE_NAME__
+  description: Industrial process data collection
+  version: 0.1.0
+process:
+  id: __PROCESS_ID__
+  model: cycle
+  membership: single
+  close_run: last_product_exit
+mqtt:
+  enabled: true
+  host: localhost
+  client_id: __SERVICE_NAME__
+  payload_format: flat
+opcua:
+  enabled: false
+questdb:
+  enabled: false
+mappings:
+  - source: mqtt
+    topic: demo/cnc/process
+    id: SpindleLoad
+    name: spindle_load
+    type: float
+    outputs:
+      process_data_time:
+        - {name: spindle_load_max, calculation: max, output_type: double}
+  - source: mqtt
+    topic: demo/cnc/process
+    id: Temperature
+    name: temperature
+    type: float
+    unit: °C
+    outputs:
+      process_data_time:
+        - {name: temperature_max, calculation: max, output_type: double}
+  - source: mqtt
+    topic: demo/cnc/process
+    id: OilPressure
+    name: oil_pressure
+    type: float
+    unit: bar
+    outputs:
+      process_data_time:
+        - {name: oil_pressure_min, calculation: min, output_type: double}
+lifecycle:
+  source: explicit
+  product_topics:
+    enter_topic: demo/cnc/product/enter
+    exit_topic: demo/cnc/product/exit
+streams:
+  product_data:
+    enabled: false
+  process_data_time:
+    enabled: true
+    interval_s: 5.0

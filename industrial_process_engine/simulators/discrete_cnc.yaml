@@ -1,0 +1,38 @@
+# Quick start:
+#   python -m industrial_process_engine.simulators.run_engine cnc
+#   python -m industrial_process_engine.simulators.discrete_cnc --parts 3
+# Each enter/exit pair is one single-membership cycle and one product summary.
+service:
+  name: discrete_cnc_demo
+  title: Discrete CNC Demo
+  description: One summary row per machined part
+  version: 0.1.0
+process:
+  id: CNC_DEMO
+  model: cycle
+  membership: single
+  close_run: last_product_exit
+mqtt:
+  enabled: true
+  payload_format: flat
+  host: localhost
+  client_id: discrete-cnc-engine
+opcua:
+  enabled: false
+questdb:
+  enabled: false
+mappings:
+  - {source: mqtt, topic: demo/cnc/process, id: SpindleLoad, name: spindle_load, type: float, outputs: {process_data_time: [{name: spindle_load_max, calculation: max, output_type: double}]}}
+  - {source: mqtt, topic: demo/cnc/process, id: Temperature, name: temperature, type: float, unit: °C, outputs: {process_data_time: [{name: temperature_max, calculation: max, output_type: double}]}}
+  - {source: mqtt, topic: demo/cnc/process, id: OilPressure, name: oil_pressure, type: float, unit: bar, outputs: {process_data_time: [{name: oil_pressure_min, calculation: min, output_type: double}]}}
+lifecycle:
+  source: explicit
+  product_topics:
+    enter_topic: demo/cnc/product/enter
+    exit_topic: demo/cnc/product/exit
+streams:
+  product_data:
+    enabled: false
+  process_data_time:
+    enabled: true
+    interval_s: 5.0

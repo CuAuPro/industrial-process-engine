@@ -1,0 +1,1 @@
+"""Distance-weighted material aggregation."""

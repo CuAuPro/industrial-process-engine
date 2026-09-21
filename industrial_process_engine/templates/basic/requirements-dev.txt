@@ -1,0 +1,2 @@
+-e ../industrial_process_engine
+pytest>=8.3,<9

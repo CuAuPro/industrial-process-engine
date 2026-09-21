@@ -1,0 +1,166 @@
+# Quick start:
+#   python -m industrial_process_engine.simulators.run_engine rolling-mill
+#   python -m industrial_process_engine.simulators.rolling_mill --products 1 --passes 3
+# Product-ID change starts the run; pass_number changes start new distance segments.
+service:
+  name: rolling_mill_demo
+  title: Rolling Mill Demo
+  description: Multi-pass rolling with a temporary reverse
+  version: 0.1.0
+process:
+  id: ROLLING_MILL_DEMO
+  model: continuous
+mqtt:
+  enabled: true
+  payload_format: flat
+  flat_timestamp_path: Timestamp
+  host: localhost
+  port: 1883
+  client_id: rolling-mill-engine
+  qos: 1
+opcua:
+  enabled: false
+questdb:
+  enabled: false
+mappings:
+  - source: mqtt
+    topic: demo/rolling-mill/process
+    id: RgcTrfRef
+    name: force_set
+    type: float
+    outputs: {product_data: [{name: force_set, calculation: weighted_mean, output_type: double}]}
+  - source: mqtt
+    topic: demo/rolling-mill/process
+    id: RgcTrfAct
+    name: force_actual
+    type: float
+    outputs: {product_data: [{name: force_actual, calculation: weighted_mean, output_type: double}]}
+  - source: mqtt
+    topic: demo/rolling-mill/process
+    id: AgcdHEx
+    name: thickness_difference
+    type: float
+    outputs: {product_data: [{name: thickness_difference, calculation: weighted_mean, output_type: double}]}
+  - source: mqtt
+    topic: demo/rolling-mill/process
+    id: PrrNrOfPasses
+    name: pass_count
+    type: int
+    outputs: {product_data: [{name: pass_count, calculation: last, output_type: int}]}
+  - source: mqtt
+    topic: demo/rolling-mill/process
+    id: PrrPassNumber
+    name: pass_number
+    type: int
+    outputs: {product_data: [{name: pass_number, calculation: last, output_type: int}]}
+  - source: mqtt
+    topic: demo/rolling-mill/process
+    id: MdrVAct
+    name: speed
+    type: float
+    unit: m/min
+    outputs:
+      product_data: [{name: speed, calculation: weighted_mean, output_type: double}]
+      process_data_time:
+        - {name: speed_avg, calculation: weighted_mean, output_type: double}
+        - {name: speed_max, calculation: max, output_type: double}
+  - source: mqtt
+    topic: demo/rolling-mill/process
+    id: ElectricityMeterKWh
+    name: electricity_meter_kwh
+    type: float
+  - source: mqtt
+    topic: demo/rolling-mill/process
+    id: ElectricalPowerKW
+    name: mill_electrical_power_kw
+    type: float
+    outputs: {product_data: [{name: mill_electrical_power_kw, calculation: weighted_mean, output_type: double}]}
+  - source: mqtt
+    topic: demo/rolling-mill/process
+    id: Timestamp
+    name: formatted_time
+    type: string
+    outputs: {product_data: [{name: formatted_time, calculation: last, output_type: symbol}]}
+  - source: mqtt
+    topic: demo/rolling-mill/process
+    id: EntryLengthM
+    name: entry_length_m
+    type: float
+    outputs: {product_data: [{name: entry_length_m, calculation: last, output_type: double}]}
+  - source: mqtt
+    topic: demo/rolling-mill/process
+    id: ExitLengthM
+    name: exit_length_m
+    type: float
+    outputs: {product_data: [{name: exit_length_m, calculation: last, output_type: double}]}
+  - source: mqtt
+    topic: demo/rolling-mill/process
+    id: EntryTravelM
+    name: entry_travel_m
+    type: float
+    outputs: {product_data: [{name: entry_travel_m, calculation: last, output_type: double}]}
+  - source: mqtt
+    topic: demo/rolling-mill/process
+    id: ExitTravelM
+    name: exit_travel_m
+    type: float
+    outputs: {product_data: [{name: exit_travel_m, calculation: last, output_type: double}]}
+  - source: mqtt
+    topic: demo/rolling-mill/process
+    id: EntryThicknessMm
+    name: entry_thickness_mm
+    type: float
+    outputs: {product_data: [{name: entry_thickness_mm, calculation: weighted_mean, output_type: double}]}
+  - source: mqtt
+    topic: demo/rolling-mill/process
+    id: ExitThicknessSetMm
+    name: exit_thickness_set_mm
+    type: float
+    outputs: {product_data: [{name: exit_thickness_set_mm, calculation: weighted_mean, output_type: double}]}
+  - source: mqtt
+    topic: demo/rolling-mill/process
+    id: ExitThicknessActMm
+    name: exit_thickness_actual_mm
+    type: float
+    outputs: {product_data: [{name: exit_thickness_actual_mm, calculation: weighted_mean, output_type: double}]}
+
+  # The simulator also publishes InternalDistanceM for diagnostics. It is left
+  # deliberately unmapped because the active demo integrates MdrVAct instead.
+  # To test direct distance, uncomment this mapping and replace the position
+  # block below with source: direct and signal: internal_distance_m.
+  # - source: mqtt
+  #   topic: demo/rolling-mill/process
+  #   id: InternalDistanceM
+  #   name: internal_distance_m
+  #   type: float
+  - source: mqtt
+    topic: demo/rolling-mill/events
+    id: ProductId
+    name: lot
+    type: string
+    required: true
+lifecycle:
+  source: explicit
+  product_id:
+    signal: lot
+    on_change: PROCESS_START
+    on_clear: PROCESS_END
+tracking:
+  # Active tracking uses integration; InternalDistanceM is not consumed.
+  source: speed
+  speed_signal: speed
+  reverse_policy: hold
+  reset_scope: segment
+  segment_start: segment_change
+  segment_signal: pass_number
+  max_forward_jump_m: 2.0
+  stale_after_ms: 2000
+streams:
+  product_data:
+    axis: distance
+    interval_m: 1.0
+    stale_after_ms: 2000
+  process_data_time:
+    enabled: true
+    interval_s: 5.0
+    stale_after_ms: 2000

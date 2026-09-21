@@ -1,0 +1,115 @@
+# Quick start (two terminals, with MQTT on localhost):
+#   python -m industrial_process_engine.simulators.run_engine continuous-line
+#   python -m industrial_process_engine.simulators.continuous_line --products 2
+# This demo shows product handoff by direct distance reset. A changed/cleared
+# product ID ends the old run; the position counter reset starts the pending one.
+service:
+  name: continuous_line_demo
+  title: Continuous Line Demo
+  description: Forward-only product aggregation demo
+  version: 0.1.0
+process:
+  id: CONTINUOUS_LINE_DEMO
+  model: continuous
+mqtt:
+  enabled: true
+  payload_format: value_array
+  host: localhost
+  port: 1883
+  client_id: continuous-line-engine
+  qos: 1
+opcua:
+  enabled: false
+questdb:
+  enabled: false
+mappings:
+  - source: mqtt
+    topic: demo/continuous-line/process
+    id: PositionM
+    name: position
+    type: float
+    required: true
+  - source: mqtt
+    topic: demo/continuous-line/process
+    id: SpeedMMin
+    name: speed
+    type: float
+    unit: m/min
+    outputs:
+      product_data: [{name: speed, calculation: weighted_mean, output_type: double}]
+      process_data_time:
+        - {name: speed_avg, calculation: weighted_mean, output_type: double}
+        - {name: speed_max, calculation: max, output_type: double}
+  - {source: mqtt, topic: demo/continuous-line/process, id: Brush1SetLoad, name: brush_1_set_load, type: float, station: brush_1, outputs: {product_data: [{name: brush_1_set_load, calculation: weighted_mean, output_type: double}]}}
+  - {source: mqtt, topic: demo/continuous-line/process, id: Brush1ActualLoad, name: brush_1_actual_load, type: float, station: brush_1, outputs: {product_data: [{name: brush_1_actual_load, calculation: weighted_mean, output_type: double}]}}
+  - {source: mqtt, topic: demo/continuous-line/process, id: Brush1SetSpeed, name: brush_1_set_speed, type: float, station: brush_1, outputs: {product_data: [{name: brush_1_set_speed, calculation: weighted_mean, output_type: double}]}}
+  - {source: mqtt, topic: demo/continuous-line/process, id: Brush1ActualSpeed, name: brush_1_actual_speed, type: float, station: brush_1, outputs: {product_data: [{name: brush_1_actual_speed, calculation: weighted_mean, output_type: double}]}}
+  - {source: mqtt, topic: demo/continuous-line/process, id: Brush1SetPosition, name: brush_1_set_position, type: float, station: brush_1, outputs: {product_data: [{name: brush_1_set_position, calculation: weighted_mean, output_type: double}]}}
+  - {source: mqtt, topic: demo/continuous-line/process, id: Brush1ActualPosition, name: brush_1_actual_position, type: float, station: brush_1, outputs: {product_data: [{name: brush_1_actual_position, calculation: weighted_mean, output_type: double}]}}
+  - {source: mqtt, topic: demo/continuous-line/process, id: Brush2SetLoad, name: brush_2_set_load, type: float, station: brush_2, outputs: {product_data: [{name: brush_2_set_load, calculation: weighted_mean, output_type: double}]}}
+  - {source: mqtt, topic: demo/continuous-line/process, id: Brush2ActualLoad, name: brush_2_actual_load, type: float, station: brush_2, outputs: {product_data: [{name: brush_2_actual_load, calculation: weighted_mean, output_type: double}]}}
+  - {source: mqtt, topic: demo/continuous-line/process, id: Brush2SetSpeed, name: brush_2_set_speed, type: float, station: brush_2, outputs: {product_data: [{name: brush_2_set_speed, calculation: weighted_mean, output_type: double}]}}
+  - {source: mqtt, topic: demo/continuous-line/process, id: Brush2ActualSpeed, name: brush_2_actual_speed, type: float, station: brush_2, outputs: {product_data: [{name: brush_2_actual_speed, calculation: weighted_mean, output_type: double}]}}
+  - {source: mqtt, topic: demo/continuous-line/process, id: Brush2SetPosition, name: brush_2_set_position, type: float, station: brush_2, outputs: {product_data: [{name: brush_2_set_position, calculation: weighted_mean, output_type: double}]}}
+  - {source: mqtt, topic: demo/continuous-line/process, id: Brush2ActualPosition, name: brush_2_actual_position, type: float, station: brush_2, outputs: {product_data: [{name: brush_2_actual_position, calculation: weighted_mean, output_type: double}]}}
+  - source: mqtt
+    topic: demo/continuous-line/process
+    id: ElectricityMeterKWh
+    name: electricity_meter_kwh
+    type: float
+  - source: mqtt
+    topic: demo/continuous-line/process
+    id: ElectricalPowerKW
+    name: line_electrical_power_kw
+    type: float
+    outputs: {product_data: [{name: line_electrical_power_kw, calculation: weighted_mean, output_type: double}]}
+  - source: mqtt
+    topic: demo/continuous-line/process
+    id: NaturalGasMeterM3
+    name: natural_gas_meter_m3
+    type: float
+  - source: mqtt
+    topic: demo/continuous-line/process
+    id: NaturalGasFlowM3H
+    name: natural_gas_flow_m3_h
+    type: float
+    outputs: {product_data: [{name: natural_gas_flow_m3_h, calculation: weighted_mean, output_type: double}]}
+  - source: mqtt
+    topic: demo/continuous-line/events
+    id: ProductId
+    name: lot
+    type: string
+    required: true
+lifecycle:
+  source: explicit
+  product_id:
+    signal: lot
+    on_change: PROCESS_END
+    on_clear: PROCESS_END
+spatial:
+  origin: process_entry
+  line_length_m: 25.0
+  stations:
+    brush_1:
+      offset_m: 6.0
+    brush_2:
+      offset_m: 12.0
+tracking:
+  source: direct
+  signal: position
+  speed_signal: speed
+  fallback_to_speed: true
+  reverse_policy: hold
+  reset_ratio: 0.1
+  reset_scope: product
+  max_forward_jump_m: 2.0
+  stale_after_ms: 2000
+streams:
+  product_data:
+    axis: distance
+    interval_m: 1.0
+    stale_after_ms: 2000
+  process_data_time:
+    enabled: true
+    interval_s: 5.0
+    stale_after_ms: 2000

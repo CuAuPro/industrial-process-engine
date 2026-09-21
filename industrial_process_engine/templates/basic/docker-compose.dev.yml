@@ -1,0 +1,6 @@
+services:
+  __SERVICE_NAME__:
+    image: __SERVICE_NAME__:dev
+    build: .
+    ports:
+      - "127.0.0.1:8080:8080"

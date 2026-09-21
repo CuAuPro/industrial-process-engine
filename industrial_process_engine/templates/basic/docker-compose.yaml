@@ -1,0 +1,13 @@
+services:
+  __SERVICE_NAME__:
+    image: ${APP_IMAGE:-__SERVICE_NAME__:latest}
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      - process-data:/app/data
+      - ./config/settings.yaml:/app/config/settings.yaml:ro
+
+volumes:
+  process-data:

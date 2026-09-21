@@ -1,0 +1,36 @@
+# Quick start:
+#   python -m industrial_process_engine.simulators.run_engine cutting-line
+#   python -m industrial_process_engine.simulators.transformation_cutting_line --children 3
+# RunActive emits PROCESS_START/END; product topics manage parents and children.
+service:
+  name: cutting_line_demo
+  title: Cutting Line Demo
+  description: Parent-child material transformation
+  version: 0.1.0
+process:
+  id: CUTTING_LINE_DEMO
+  model: transformation
+mqtt:
+  enabled: true
+  payload_format: flat
+  host: localhost
+  client_id: cutting-line-engine
+opcua:
+  enabled: false
+questdb:
+  enabled: false
+mappings:
+  - {source: mqtt, topic: demo/cutting/process, id: RunActive, name: run_active, type: bool, true_event: PROCESS_START, false_event: PROCESS_END}
+  - {source: mqtt, topic: demo/cutting/process, id: CutForce, name: cut_force, type: float, outputs: {process_data_time: [{name: cut_force_max, calculation: max, output_type: double}]}}
+lifecycle:
+  source: explicit
+  product_topics:
+    enter_topic: demo/cutting/product/enter
+    exit_topic: demo/cutting/product/exit
+    parent_ids: ParentProductIds
+streams:
+  product_data:
+    enabled: false
+  process_data_time:
+    enabled: true
+    interval_s: 5.0
